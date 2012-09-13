@@ -11,9 +11,7 @@ a.main-category-link{
 }
 
 .main-category{
-    //height: 125px;
-    padding-top: 62px;
-    padding-bottom: 62px;
+    height: 125px;
     text-align: center;
 }
 
