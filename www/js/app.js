@@ -1,21 +1,35 @@
+var app;
+
 (function($){
-    function on_pause(){
-        window.localStorage.setItem("laststate", "LOLSTATE");
-    }
+    app = {
+        initialize: function(){
+            this.bind();        
+        },
+    
+        bind: function(){
+            $(window).load(function(){
+                $(document).bind('deviceready', app.on_device_ready);
+            });
+        },
 
-    function on_resume(){
-        console.log("Device resumed");
-        alert("Device resumed");
-    }
+        on_device_ready: function(){
+            navigator.notification.alert('Window loaded!', function(){}, 'Loading complete', 'Yabru');
+            alert(window.localStorage.getItem("laststate"));
+            $(document).bind('pause', app.on_pause);
+            $(document).bind('backbutton', app.on_pause);
+            $(document).bind('resume', app.on_resume);
+        },
 
-    function on_device_ready(){
-        navigator.notification.alert('Window loaded!', function(){}, 'Loading complete', 'Yabru');
-        alert(window.localStorage.getItem("laststate"));
-        $(document).bind('pause', on_pause);
-        $(document).bind('resume', on_resume);
-    }
+        on_pause: function(){
+            window.localStorage.setItem("laststate", "LULSTATE");
+        },
 
-    $(window).load(function(){
-        $(document).bind('deviceready', on_device_ready);
-    });
+        on_resume: function(){
+            console.log("Device resumed");
+
+            setTimeout(function() {
+              alert("Device resumed");
+            }, 0);
+        }
+    }
 })(jQuery);
