@@ -5,6 +5,7 @@
 
     function on_resume(){
         console.log("Device resumed");
+        alert("Device resumed");
     }
 
     function on_device_ready(){
