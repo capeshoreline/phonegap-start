@@ -1,6 +1,6 @@
 (function($){
     function on_pause(){
-        console.log("Device paused");
+        window.localStorage.setItem("laststate", "LOLSTATE");
     }
 
     function on_resume(){
@@ -9,13 +9,13 @@
     }
 
     function on_device_ready(){
-        alert("Device ready");
+        navigator.notification.alert('Window loaded!', function(){}, 'Loading complete', 'Yabru');
+        alert(window.localStorage.getItem("laststate"));
         $(document).bind('pause', on_pause);
         $(document).bind('resume', on_resume);
     }
 
     $(window).load(function(){
-        navigator.notification.alert('Window loaded!', function(){}, 'Loading complete', 'Yabru');
         $(document).bind('deviceready', on_device_ready);
     });
 })(jQuery);
