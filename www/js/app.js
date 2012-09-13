@@ -8,6 +8,7 @@ var app;
     
         bind: function(){
             $(window).load(function(){
+                $.mobile.defaultPageTransition = 'slide';
                 $(document).bind('deviceready', app.on_device_ready);
             });
         },
@@ -16,7 +17,7 @@ var app;
             navigator.notification.alert('Window loaded!', function(){}, 'Loading complete', 'Yabru');
             alert(window.localStorage.getItem("laststate"));
             $(document).bind('pause', app.on_pause);
-            $(document).bind('backbutton', app.on_pause);
+            //$(document).bind('backbutton', app.on_pause);
             $(document).bind('resume', app.on_resume);
         },
 
