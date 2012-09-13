@@ -13,7 +13,8 @@
         $(document).bind('resume', on_resume);
     }
 
-    $(window).load(function() {
+    $(window).load(function(){
+        navigator.notification.alert('Window loaded!', function(){}, 'Loading complete', 'Yabru');
         $(document).bind('deviceready', on_device_ready);
     });
 })(jQuery);
