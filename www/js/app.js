@@ -1,65 +1,115 @@
-var app;
-
 (function($){
-    app = {
-        initialize: function(){
+    var map = {
+        initialize: function(page_elem, map_elem){
+            this.page_elem = $(page_elem);
+            this.map_elem = $(map_elem);
+
             this.bind();
 
-            this.map.bind();        
+            return this;
         },
 
-        map: {
-            bind: function(){
-                $('#acura').live('pageinit', function(){
-                    var yourStartLatLng = new google.maps.LatLng(-33.959023, 18.459435);
-                    $('#map-canvas').gmap({'center': yourStartLatLng, 'disableDefaultUI': true, 'callback': function(){
-                        var self = this;
-						self.addMarker({'position': self.get('map').getCenter() }).click(function() {
-							self.openInfoWindow({ 'content': 'Hello World!' }, this);
-						});
+        bind: function(){
+            var me = this;
+            me.page_elem.live('pageinit', function(){
+                var start_lat_lng = new google.maps.LatLng(-33.959023, 18.459435);
+                me.map_elem.gmap({'center': start_lat_lng, 'callback': function(){
+                    var self = this;
+					self.addMarker({'position': self.get('map').getCenter() }).click(function() {
+						self.openInfoWindow({ 'content': 'Hello World!' }, this);
+					});
 
-                        self.set('getCurrentPosition', function() {
-							self.getCurrentPosition( function(position, status) {
-								if ( status === 'OK' ) {
-									var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
-									self.get('map').panTo(latlng);
-									self.search({ 'location': latlng }, function(results, status) {
-										if ( status === 'OK' ) {
-											$('#from').val(results[0].formatted_address);
-										}
-									});
-								}
-							});
+                    self.set('getCurrentPosition', function() {
+						self.getCurrentPosition( function(position, status) {
+							if ( status === 'OK' ) {
+								var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude)
+								self.get('map').panTo(latlng);
+								self.search({ 'location': latlng }, function(results, status) {
+									if ( status === 'OK' ) {
+										$('#from').val(results[0].formatted_address);
+									}
+								});
+							}
 						});
+					});
 
-
-                        $('#submit').click(function(){
-							self.displayDirections({ 'origin': $('#from').val(), 'destination': $('#to').val(), 'travelMode': google.maps.DirectionsTravelMode.DRIVING }, { 'panel': document.getElementById('directions')}, function(response, status) {
-								( status === 'OK' ) ? $('#results').show() : $('#results').hide();
-							});
-							return false;
+                    $('#submit').click(function(){
+						self.displayDirections({ 'origin': $('#from').val(), 'destination': $('#to').val(),
+                        'travelMode': google.maps.DirectionsTravelMode.DRIVING },
+                        {'panel': document.getElementById('directions')}, function(response, status){
+							( status === 'OK' ) ? $('#results').show() : $('#results').hide();
 						});
-                    
-                    }});
+						return false;
+					});
+                
+                }});
+            });
+
+            me.page_elem.live('pageshow', function(){
+                me.map_elem.gmap('refresh');
+                me.map_elem.gmap('get', 'getCurrentPosition')();
+            });
+        }
+    };
+
+    var social_media = {
+        initialize: function(page_elems){
+            this.twitter_page_elem = page_elems.twitter ? $(page_elems.twitter) : null;
+            this.bind();
+
+            /*var oauth;
+            var requestParams;
+            var options = { 
+                    consumerKey: 'hWLvkvpI1DxJ6GoEL0AfA',
+                    consumerSecret: 'yT4aT1TYOibTGynzAxwk0ecuC7F1wM8fPyEbqA',
+                    callbackUrl: 'http://www.your-callback-url.com' };
+            var mentionsId = 0;
+            var localStoreKey = "tmt5p1";
+            var verifier = '21345434';
+
+            oauth = OAuth(options);
+            oauth.get('https://api.twitter.com/oauth/request_token',
+                    function(data) {
+                        requestParams = data.text;
+                        console.log("AppLaudLog: requestParams: " + data.text);
+                        window.plugins.childBrowser.showWebPage('https://api.twitter.com/oauth/authorize?'+data.text, 
+                                { showLocationBar : false });                    
+                    },
+                    function(data) { 
+                        alert('Error : No Authorization'); 
+                        console.log("AppLaudLog: 2 Error " + data); 
+                        $('#oauthStatus').html('<span style="color:red;">Error during authorization</span>');
+                    }
+            );
+            mentionsId = 0;*/
+
+            return this;
+        },
+
+        bind: function(){
+            var me = this;
+            if(me.twitter_page_elem != null){
+                me.twitter_page_elem.live('pageinit', function(){
+                    console.log('initting');
                 });
+            }       
+        }
+    }
 
-                $('#acura').live('pageshow', function(){
-                    var yourStartLatLng = new google.maps.LatLng(59.3426606750, 18.0736160278);
-                    $('#map-canvas').gmap('refresh');
-                    $('#map-canvas').gmap('get', 'getCurrentPosition')();
-                });
-            }
+    window.app = {
+        initialize: function(){
+            this.map = map.initialize('#map', '#map-canvas');
+            this.social_media = social_media.initialize({'twitter': '#twitter'});
+            
+            this.bind();
+
+            return this;
         },
     
         bind: function(){
             $(window).load(function(){
-                $(document).bind('mobileinit', app.on_mobile_init);
                 $(document).bind('deviceready', app.on_device_ready);
             });
-        },
-
-        on_mobile_init: function(){
-            $.mobile.defaultPageTransition = 'slide';        
         },
 
         on_device_ready: function(){
@@ -81,5 +131,5 @@ var app;
               alert("Device resumed");
             }, 0);
         }
-    }
+    };
 })(jQuery);
