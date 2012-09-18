@@ -55,6 +55,9 @@
     var social_media = {
         initialize: function(page_elems){
             this.twitter_page_elem = page_elems.twitter ? $(page_elems.twitter) : null;
+        
+            this.initialize_oauth();
+
             this.bind();
 
             /*var oauth;
@@ -86,11 +89,105 @@
             return this;
         },
 
+        initialize_oauth: function(){
+            this.facebook_oauth = null;
+            this.twitter_oauth = null;
+        },
+
+        authenticate_twitter: function(){
+            var request_params;
+            if (typeof window.plugins.childBrowser.onLocationChange !== "function") {
+                window.plugins.childBrowser.onLocationChange = function(loc){
+      
+                    // If user hit "No, thanks" when asked to authorize access
+                    if (loc.indexOf("http://www.your-callback-url.com/?denied") >= 0) {
+                        window.plugins.childBrowser.close();
+                        return;
+                    }
+                    
+                    // The supplied oauth_callback_url for this session is being loaded
+                    if (loc.indexOf("http://www.your-callback-url.com/?") >= 0) {
+                        var index, verifier = '';            
+                        var params = loc.substr(loc.indexOf('?') + 1);
+                        
+                        params = params.split('&');
+                        for (var i = 0; i < params.length; i++) {
+                            var y = params[i].split('=');
+                            if(y[0] === 'oauth_verifier') {
+                                verifier = y[1];
+                            }
+                        }
+                   
+                        // Exchange request token for access token
+                        oauth.get('https://api.twitter.com/oauth/access_token?oauth_verifier='+verifier+'&'+request_params,
+                            function(data) {               
+                                var access_params = {};
+                                var qvars_tmp = data.text.split('&');
+                                for (var i = 0; i < qvars_tmp.length; i++) {
+                                    var y = qvars_tmp[i].split('=');
+                                    access_params[y[0]] = decodeURIComponent(y[1]);
+                                }
+                                oauth.setAccessToken([access_params.oauth_token, access_params.oauth_token_secret]);
+                                
+                                // Save access token/key in localStorage
+                                var access_data = {};
+                                access_data.access_token_key = access_params.oauth_token;
+                                access_data.access_token_secret = access_params.oauth_token_secret;
+                                console.log("AppLaudLog: Storing token key/secret in localStorage");
+                                //localStorage.setItem(localStoreKey, JSON.stringify(accessData));
+
+                                oauth.get('https://api.twitter.com/1/account/verify_credentials.json?skip_status=true',
+                                        function(data) {
+                                            var entry = JSON.parse(data.text);
+                                            console.log("AppLaudLog: screen_name: " + entry.screen_name);
+                                        },
+                                        function(data) { 
+                                            alert('Error getting user credentials'); 
+                                            console.log("AppLaudLog: Error " + data);
+                                        }
+                                );                                         
+                                window.plugins.childBrowser.close();
+                            },
+                            function(data) { 
+                                alert('Error : No Authorization'); 
+                                console.log("AppLaudLog: 1 Error " + data); 
+                                $('#oauthStatus').html('<span style="color:red;">Error during authorization</span>');
+                            }
+                        );
+                    }
+                };  
+            }
+
+            var options = { 
+                consumerKey: 'hWLvkvpI1DxJ6GoEL0AfA',
+                consumerSecret: 'yT4aT1TYOibTGynzAxwk0ecuC7F1wM8fPyEbqA',
+                callbackUrl: 'http://www.your-callback-url.com'
+            };
+
+            this.twitter_oauth = OAuth(options);
+            this.twitter_oauth.get('https://api.twitter.com/oauth/request_token',
+                function(data){
+                    request_params = data.text;
+                    console.log("AppLaudLog: requestParams: " + data.text);
+                    window.plugins.childBrowser.showWebPage('https://api.twitter.com/oauth/authorize?'+data.text, 
+                        { showLocationBar : false });
+                },
+                function(data){ 
+                    alert('Error : No Authorization');
+                    console.log("AppLaudLog: 2 Error " + data);
+                }
+            );          
+        },
+
         bind: function(){
             var me = this;
             if(me.twitter_page_elem != null){
                 me.twitter_page_elem.live('pageinit', function(){
-                    console.log('initting');
+                    me.authenticate_twitter();
+                });
+
+                me.twitter_page_elem.live('pageshow', function(){
+                    console.log('onpage');
                 });
             }       
         }
