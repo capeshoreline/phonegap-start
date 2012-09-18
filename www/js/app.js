@@ -65,7 +65,7 @@
             var options = { 
                     consumerKey: 'hWLvkvpI1DxJ6GoEL0AfA',
                     consumerSecret: 'yT4aT1TYOibTGynzAxwk0ecuC7F1wM8fPyEbqA',
-                    callbackUrl: 'http://www.your-callback-url.com' };
+                    callbackUrl: 'http://test.kevinstrumental.com' };
             var mentionsId = 0;
             var localStoreKey = "tmt5p1";
             var verifier = '21345434';
@@ -96,17 +96,19 @@
 
         authenticate_twitter: function(){
             var request_params;
+            var me = this;
             if (typeof window.plugins.childBrowser.onLocationChange !== "function") {
                 window.plugins.childBrowser.onLocationChange = function(loc){
+                    alert('location changed ' + loc);
       
                     // If user hit "No, thanks" when asked to authorize access
-                    if (loc.indexOf("http://www.your-callback-url.com/?denied") >= 0) {
+                    if (loc.indexOf("http://test.kevinstrumental.com/?denied") >= 0) {
                         window.plugins.childBrowser.close();
                         return;
                     }
                     
                     // The supplied oauth_callback_url for this session is being loaded
-                    if (loc.indexOf("http://www.your-callback-url.com/?") >= 0) {
+                    if (loc.indexOf("http://test.kevinstrumental.com/?") >= 0) {
                         var index, verifier = '';            
                         var params = loc.substr(loc.indexOf('?') + 1);
                         
@@ -119,7 +121,7 @@
                         }
                    
                         // Exchange request token for access token
-                        oauth.get('https://api.twitter.com/oauth/access_token?oauth_verifier='+verifier+'&'+request_params,
+                        me.twitter_oauth.get('https://api.twitter.com/oauth/access_token?oauth_verifier='+verifier+'&'+request_params,
                             function(data) {               
                                 var access_params = {};
                                 var qvars_tmp = data.text.split('&');
@@ -127,7 +129,7 @@
                                     var y = qvars_tmp[i].split('=');
                                     access_params[y[0]] = decodeURIComponent(y[1]);
                                 }
-                                oauth.setAccessToken([access_params.oauth_token, access_params.oauth_token_secret]);
+                                me.twitter_oauth.setAccessToken([access_params.oauth_token, access_params.oauth_token_secret]);
                                 
                                 // Save access token/key in localStorage
                                 var access_data = {};
@@ -136,7 +138,7 @@
                                 console.log("AppLaudLog: Storing token key/secret in localStorage");
                                 //localStorage.setItem(localStoreKey, JSON.stringify(accessData));
 
-                                oauth.get('https://api.twitter.com/1/account/verify_credentials.json?skip_status=true',
+                                me.twitter_oauth.get('https://api.twitter.com/1/account/verify_credentials.json?skip_status=true',
                                         function(data) {
                                             var entry = JSON.parse(data.text);
                                             console.log("AppLaudLog: screen_name: " + entry.screen_name);
@@ -150,8 +152,7 @@
                             },
                             function(data) { 
                                 alert('Error : No Authorization'); 
-                                console.log("AppLaudLog: 1 Error " + data); 
-                                $('#oauthStatus').html('<span style="color:red;">Error during authorization</span>');
+                                console.log("AppLaudLog: 1 Error " + data);
                             }
                         );
                     }
@@ -161,11 +162,11 @@
             var options = { 
                 consumerKey: 'hWLvkvpI1DxJ6GoEL0AfA',
                 consumerSecret: 'yT4aT1TYOibTGynzAxwk0ecuC7F1wM8fPyEbqA',
-                callbackUrl: 'http://www.your-callback-url.com'
+                callbackUrl: 'http://test.kevinstrumental.com'
             };
 
-            this.twitter_oauth = OAuth(options);
-            this.twitter_oauth.get('https://api.twitter.com/oauth/request_token',
+            me.twitter_oauth = OAuth(options);
+            me.twitter_oauth.get('https://api.twitter.com/oauth/request_token',
                 function(data){
                     request_params = data.text;
                     console.log("AppLaudLog: requestParams: " + data.text);
