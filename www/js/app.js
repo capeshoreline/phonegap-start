@@ -99,8 +99,6 @@
             var me = this;
             if (typeof window.plugins.childBrowser.onLocationChange !== "function") {
                 window.plugins.childBrowser.onLocationChange = function(loc){
-                    alert('location changed ' + loc);
-      
                     // If user hit "No, thanks" when asked to authorize access
                     if (loc.indexOf("http://test.kevinstrumental.com/?denied") >= 0) {
                         window.plugins.childBrowser.close();
@@ -141,7 +139,17 @@
                                 me.twitter_oauth.get('https://api.twitter.com/1/account/verify_credentials.json?skip_status=true',
                                         function(data) {
                                             var entry = JSON.parse(data.text);
-                                            console.log("AppLaudLog: screen_name: " + entry.screen_name);
+                                            alert("AppLaudLog: screen_name: " + entry.screen_name);
+                                            me.twitter_oauth.post('https://api.twitter.com/1/statuses/update.json',
+                                                { 'status' : 'From Android',  // jsOAuth encodes for us
+                                                  'trim_user' : 'true' },
+                                                function(data) {
+                                                    alert("Success");
+                                                },
+                                                function(data) { 
+                                                    alert('Error Tweeting.');
+                                                }
+                                            );                  
                                         },
                                         function(data) { 
                                             alert('Error getting user credentials'); 
