@@ -70,82 +70,103 @@
             me.twitter_oauth = null;
             me.request_params_twitter = null;
             
-            /*window.plugins.childBrowser.onLocationChange = function(loc){
-                me.authentication_callback_twitter(loc);              
-            }*/
+            window.plugins.childBrowser.onLocationChange = function(loc){
+                if(loc.indexOf('facebook') != -1){
+                    me.authentication_callback_facebook(loc);
+                }
+                else{
+                    me.authentication_callback_twitter(loc);
+                }              
+            }
         },
 
         authentication_callback_twitter: function(loc){
             var me = this;
-            if (typeof window.plugins.childBrowser.onLocationChange !== "function") {
-                window.plugins.childBrowser.onLocationChange = function(loc){
-                    // If user hit "No, thanks" when asked to authorize access
-                    if (loc.indexOf("http://test.kevinstrumental.com/?denied") >= 0) {
-                        window.plugins.childBrowser.close();
-                        return;
+            
+            // If user hit "No, thanks" when asked to authorize access
+            if (loc.indexOf("http://test.kevinstrumental.com/?denied") != -1) {
+                window.plugins.childBrowser.close();
+                return;
+            }
+            
+            // The supplied oauth_callback_url for this session is being loaded
+            if (loc.indexOf("http://test.kevinstrumental.com/?") != -1) {
+                var index, verifier = '';            
+                var params = loc.substr(loc.indexOf('?') + 1);
+                
+                params = params.split('&');
+                for (var i = 0; i < params.length; i++) {
+                    var y = params[i].split('=');
+                    if(y[0] === 'oauth_verifier') {
+                        verifier = y[1];
                     }
-                    
-                    // The supplied oauth_callback_url for this session is being loaded
-                    if (loc.indexOf("http://test.kevinstrumental.com/?") >= 0) {
-                        var index, verifier = '';            
-                        var params = loc.substr(loc.indexOf('?') + 1);
-                        
-                        params = params.split('&');
-                        for (var i = 0; i < params.length; i++) {
-                            var y = params[i].split('=');
-                            if(y[0] === 'oauth_verifier') {
-                                verifier = y[1];
-                            }
-                        }
-                   
-                        // Exchange request token for access token
-                        me.twitter_oauth.get('https://api.twitter.com/oauth/access_token?oauth_verifier='+verifier+'&'+me.request_params_twitter,
-                            function(data) {               
-                                var access_params = {};
-                                var qvars_tmp = data.text.split('&');
-                                for (var i = 0; i < qvars_tmp.length; i++) {
-                                    var y = qvars_tmp[i].split('=');
-                                    access_params[y[0]] = decodeURIComponent(y[1]);
-                                }
-                                me.twitter_oauth.setAccessToken([access_params.oauth_token, access_params.oauth_token_secret]);
-                                
-                                // Save access token/key in localStorage
-                                var access_data = {};
-                                access_data.access_token_key = access_params.oauth_token;
-                                access_data.access_token_secret = access_params.oauth_token_secret;
-                                console.log("AppLaudLog: Storing token key/secret in localStorage");
-                                //localStorage.setItem(localStoreKey, JSON.stringify(accessData));
+                }
 
-                                me.twitter_oauth.get('https://api.twitter.com/1/account/verify_credentials.json?skip_status=true',
+                var access_token_url = 'https://api.twitter.com/oauth/access_token?oauth_verifier='+verifier+'&'+me.request_params_twitter;
+           
+                // Exchange request token for access token
+                me.twitter_oauth.get(access_token_url,
+                    function(data) {               
+                        var access_params = {};
+                        var qvars_tmp = data.text.split('&');
+                        for (var i = 0; i < qvars_tmp.length; i++) {
+                            var y = qvars_tmp[i].split('=');
+                            access_params[y[0]] = decodeURIComponent(y[1]);
+                        }
+                        me.twitter_oauth.setAccessToken([access_params.oauth_token, access_params.oauth_token_secret]);
+                        
+                        // Save access token/key in localStorage
+                        var access_data = {};
+                        access_data.access_token_key = access_params.oauth_token;
+                        access_data.access_token_secret = access_params.oauth_token_secret;
+                        console.log("AppLaudLog: Storing token key/secret in localStorage");
+                        //localStorage.setItem(localStoreKey, JSON.stringify(accessData));
+
+                        var verify_credentials_url = 'https://api.twitter.com/1/account/verify_credentials.json?skip_status=true';
+
+                        me.twitter_oauth.get(verify_credentials_url,
+                                function(data) {
+                                    var entry = JSON.parse(data.text);
+                                    //alert(entry);
+                                    me.twitter_oauth.post('https://api.twitter.com/1/statuses/update.json',
+                                        { 'status' : 'From Android',  // jsOAuth encodes for us
+                                          'trim_user' : 'true' },
                                         function(data) {
-                                            var entry = JSON.parse(data.text);
-                                            //alert(entry);
-                                            me.twitter_oauth.post('https://api.twitter.com/1/statuses/update.json',
-                                                { 'status' : 'From Android',  // jsOAuth encodes for us
-                                                  'trim_user' : 'true' },
-                                                function(data) {
-                                                    alert("Success");
-                                                },
-                                                function(data) { 
-                                                    alert('Error Tweeting.');
-                                                }
-                                            );                  
+                                            alert("Success");
                                         },
                                         function(data) { 
-                                            alert('Error getting user credentials'); 
-                                            console.log("AppLaudLog: Error " + data);
+                                            alert('Error Tweeting.');
                                         }
-                                );                                         
-                                window.plugins.childBrowser.close();
-                            },
-                            function(data) { 
-                                alert('Error : No Authorization'); 
-                                console.log("AppLaudLog: 1 Error " + data);
-                            }
-                        );
+                                    );                  
+                                },
+                                function(data) { 
+                                    alert('Error getting user credentials'); 
+                                    console.log("AppLaudLog: Error " + data);
+                                }
+                        );                                         
+                        window.plugins.childBrowser.close();
+                    },
+                    function(data) { 
+                        alert('Error : No Authorization'); 
+                        console.log("AppLaudLog: 1 Error " + data);
                     }
-                };  
+                );
             }
+        },
+
+        authentication_callback_facebook(loc){
+            var fb_code = loc.match(/code=(.*)$/)[1];
+            var access_token_url = "https://graph.facebook.com/oauth/access_token?";
+            var options = { 
+                client_id: '349230908495725',
+                client_secret: '71c96f7cd51b305692b44ec24a6bb424',
+                code: fb_code,
+                redirect_uri: 'http://www.facebook.com/connect/login_success.html'
+            };
+            
+            $.post(access_token_url + $.param(options), function(data){
+                            
+            });        
         },
 
         authenticate_twitter: function(){
