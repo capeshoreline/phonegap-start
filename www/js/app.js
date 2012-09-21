@@ -176,11 +176,11 @@
             var authorize_url = "https://graph.facebook.com/oauth/authorize?";
             var options = { 
                 client_id: '349230908495725',
-                redirect_uri: 'http://test.kevinstrumental.com/',
+                redirect_uri: 'http://www.facebook.com/connect/login_success.html',
                 scope: 'publish_stream'
             };
 
-            window.plugins.childbrowser.showWebPage(authorize_url + $.param(options));
+            window.plugins.childBrowser.showWebPage(authorize_url + $.param(options));
         },
 
         bind: function(){
