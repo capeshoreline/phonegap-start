@@ -55,47 +55,27 @@
     var social_media = {
         initialize: function(page_elems){
             this.twitter_page_elem = page_elems.twitter ? $(page_elems.twitter) : null;
+            this.facebook_page_elem = page_elems.facebook ? $(page_elems.facebook) : null;
         
             this.initialize_oauth();
 
             this.bind();
 
-            /*var oauth;
-            var requestParams;
-            var options = { 
-                    consumerKey: 'hWLvkvpI1DxJ6GoEL0AfA',
-                    consumerSecret: 'yT4aT1TYOibTGynzAxwk0ecuC7F1wM8fPyEbqA',
-                    callbackUrl: 'http://test.kevinstrumental.com' };
-            var mentionsId = 0;
-            var localStoreKey = "tmt5p1";
-            var verifier = '21345434';
-
-            oauth = OAuth(options);
-            oauth.get('https://api.twitter.com/oauth/request_token',
-                    function(data) {
-                        requestParams = data.text;
-                        console.log("AppLaudLog: requestParams: " + data.text);
-                        window.plugins.childBrowser.showWebPage('https://api.twitter.com/oauth/authorize?'+data.text, 
-                                { showLocationBar : false });                    
-                    },
-                    function(data) { 
-                        alert('Error : No Authorization'); 
-                        console.log("AppLaudLog: 2 Error " + data); 
-                        $('#oauthStatus').html('<span style="color:red;">Error during authorization</span>');
-                    }
-            );
-            mentionsId = 0;*/
-
             return this;
         },
 
         initialize_oauth: function(){
-            this.facebook_oauth = null;
-            this.twitter_oauth = null;
+            var me = this;
+            me.facebook_oauth = null;
+            me.twitter_oauth = null;
+            me.request_params_twitter = null;
+            
+            /*window.plugins.childBrowser.onLocationChange = function(loc){
+                me.authentication_callback_twitter(loc);              
+            }*/
         },
 
-        authenticate_twitter: function(){
-            var request_params;
+        authentication_callback_twitter: function(loc){
             var me = this;
             if (typeof window.plugins.childBrowser.onLocationChange !== "function") {
                 window.plugins.childBrowser.onLocationChange = function(loc){
@@ -119,7 +99,7 @@
                         }
                    
                         // Exchange request token for access token
-                        me.twitter_oauth.get('https://api.twitter.com/oauth/access_token?oauth_verifier='+verifier+'&'+request_params,
+                        me.twitter_oauth.get('https://api.twitter.com/oauth/access_token?oauth_verifier='+verifier+'&'+me.request_params_twitter,
                             function(data) {               
                                 var access_params = {};
                                 var qvars_tmp = data.text.split('&');
@@ -166,7 +146,10 @@
                     }
                 };  
             }
+        },
 
+        authenticate_twitter: function(){
+            var me = this;
             var options = { 
                 consumerKey: 'hWLvkvpI1DxJ6GoEL0AfA',
                 consumerSecret: 'yT4aT1TYOibTGynzAxwk0ecuC7F1wM8fPyEbqA',
@@ -176,7 +159,7 @@
             me.twitter_oauth = OAuth(options);
             me.twitter_oauth.get('https://api.twitter.com/oauth/request_token',
                 function(data){
-                    request_params = data.text;
+                    me.request_params_twitter = data.text;
                     console.log("AppLaudLog: requestParams: " + data.text);
                     window.plugins.childBrowser.showWebPage('https://api.twitter.com/oauth/authorize?'+data.text, 
                         { showLocationBar : false });
@@ -186,6 +169,18 @@
                     console.log("AppLaudLog: 2 Error " + data);
                 }
             );          
+        },
+
+        authenticate_facebook: function(){
+            var me = this;
+            var authorize_url = "https://graph.facebook.com/oauth/authorize?";
+            var options = { 
+                client_id: '349230908495725',
+                redirect_uri: 'http://test.kevinstrumental.com/',
+                scope: 'publish_stream'
+            };
+
+            window.plugins.childbrowser.showWebPage(authorize_url + $.param(options));
         },
 
         bind: function(){
@@ -198,6 +193,17 @@
                 me.twitter_page_elem.live('pageshow', function(){
                     console.log('onpage');
                 });
+            }
+
+            if(me.facebook_page_elem != null){
+                me.facebook_page_elem.live('pageinit', function(){
+                    me.authenticate_facebook();
+                    console.log('initting fb');
+                });
+
+                me.facebook_page_elem.live('pageshow', function(){
+                    console.log('onpage');
+                });
             }       
         }
     }
@@ -205,7 +211,10 @@
     window.app = {
         initialize: function(){
             this.map = map.initialize('#map', '#map-canvas');
-            this.social_media = social_media.initialize({'twitter': '#twitter'});
+            this.social_media = social_media.initialize({
+                'twitter': '#twitter', 
+                'facebook': '#facebook'
+            });
             
             this.bind();
 
